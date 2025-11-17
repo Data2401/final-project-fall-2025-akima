@@ -96,28 +96,12 @@ nuclear_countries %>%
   )
 
 ```
-Overall, these patterns highlight how national energy policies, safety events, and global responses to nuclear risks have shaped long-term nuclear energy production. Countries that view nuclear power as a strategic energy source maintain stable or increasing output, while others have reduced production in response to public safety concerns and policy shifts.
+These country-level trends highlight how nuclear production differs widely based on national policies and historical events. However, to understand the broader impact of these changes, it’s important to look beyond individual countries and examine how global nuclear electricity generation has shifted over time.
 
 #### How has global nuclear electricity generation changed over time?
 
 ```{r question2, echo=FALSE}
-##graph for 2nd question
-# Summarize global nuclear power generation over time
-global_nuclear <- nuclear %>%
-  filter(!is.na(nuclear_TWh)) %>%
-  group_by(year) %>%
-  summarize(global_gen = sum(nuclear_TWh, na.rm = TRUE))
 
-# Plot
-global_nuclear %>%
-  ggplot(aes(x = year, y = global_gen)) +
-  geom_line(linewidth = 1.1, color = "blue") +
-  labs(
-    title = "Global Nuclear Energy Generation Over Time",
-    x = "Year",
-    y = "Nuclear Energy Generation (TWh)"
-  ) +
-  theme_minimal()
 
 ```
 
