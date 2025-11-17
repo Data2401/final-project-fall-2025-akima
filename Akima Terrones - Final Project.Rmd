@@ -42,6 +42,11 @@ nuclear <- read_csv("nuclear-energy-generation.csv") %>%    ##comes from website
 
 glimpse(nuclear)
 colnames(nuclear)
+
+global_nuclear <- nuclear %>%
+  filter(!is.na(nuclear_TWh)) %>%
+  group_by(year) %>%
+  summarize(global_gen = sum(nuclear_TWh, na.rm = TRUE))
 ```
 
 ## Questions
@@ -100,8 +105,135 @@ These country-level trends highlight how nuclear production differs widely based
 
 #### How has global nuclear electricity generation changed over time?
 
-```{r question2, echo=FALSE}
+The global trend in nuclear electricity generation shows sustained growth from the 1970s through the early 2000s. Even after the 1986 Chernobyl disaster, worldwide nuclear output continued to increase. This reflects the fact that most countries did not immediately halt or reduce nuclear production, and many reactors built in earlier decades were still expanding or coming online in the years following the accident.
+```{r question2, echo=FALSE, message=FALSE, warning=FALSE}
+library(dygraphs)
+library(xts)
 
+global_xts <- xts(global_nuclear$global_gen,
+                  order.by = as.Date(paste0(global_nuclear$year, "-01-01")))
+
+dygraph(global_xts, main = "Global Nuclear Energy Generation Over Time") %>%
+dySeries("V1", label = "TWh", color = "green") %>%
+  dyRangeSelector() %>%
+  dyOptions(fillGraph = TRUE, fillAlpha = 0.3, colors = "green")
+
+```
+A noticeable shift emerges after the 2011 Fukushima accident. In the years immediately following Fukushima, global nuclear generation declines as countries such as Japan, Germany, and others shut down reactors or tightened regulatory standards. This suggests that while nuclear energy remained a significant part of the global energy mix, concerns about safety and public opposition following major accidents influenced the pace of new reactor construction and led some countries to reduce their reliance on nuclear power. However, this decline is not permanent.
+
+Shortly after 2012, nuclear energy generation increases, indicating that it was still being used as a major source of low-carbon electricity. This rebound may reflect ongoing investments in nuclear technology, the commissioning of new reactors within countries and the recognition of nuclear power’s role in meeting climate goals. 
+
+Soon after some time, in 2023 we witness a steep ongoing decline that could be attributed to various reasons such a combination of aging reactor retirements, slower construction timelines for new facilities, and evolving national energy policies as the population increases and energy demands grow.
+
+Overall, the data show that while major nuclear accidents can influence public perception and policy decisions, nuclear energy remains a resilient and substantial contributor to the world’s electricity supply. Its long-term stability highlights its continued role as a reliable, large-scale, low-emission energy source within the global mix.
+
+#### How does nuclear energy usage differ by country or region?
+
+The distribution of nuclear electricity generation varies sharply across global regions, revealing clear structural differences in how countries rely on nuclear power. North America stands out with the highest and most widely spread levels of nuclear production. This is largely driven by the United States, which operates the world’s largest fleet of nuclear reactors and consistently generates more nuclear electricity than any other nation.
+
+Europe shows moderately high but less variable output, reflecting the long-term stability of nuclear programs in countries like France, Germany (before its phase-out), and Sweden. Europe’s narrower spread suggests that production levels have been more consistent over time, even as individual nations adjusted their energy policies.
+
+Asia displays a wider and more uneven distribution, capturing the diverse nuclear trajectories of countries such as Japan, South Korea, China, and India. China’s rapid nuclear expansion contrasts with Japan’s post-Fukushima decline, creating a broad range of production values within the region.
+
+In contrast, Latin America and the Other category maintain very low levels of nuclear output. While these regions include countries with emerging or limited nuclear infrastructure, their consistently small distributions highlight the concentration of nuclear technology in a few major regions.
+
+```{r question 3, echo=FALSE, message=FALSE, warning=FALSE}
+library(tidyverse)
+library(plotly)
+
+# Create simple regions using case_when
+nuclear_region <- nuclear %>%
+  filter(!is.na(code)) %>%
+  mutate(region = case_when(
+    country %in% c("United States", "Canada") ~ "North America",
+    country %in% c("France", "Germany", "United Kingdom", "Sweden", "Spain", "Belgium") ~ "Europe",
+    country %in% c("Japan", "South Korea", "China", "India") ~ "Asia",
+    country %in% c("Brazil", "Argentina", "Mexico") ~ "Latin America",
+    TRUE ~ "Other"
+  ))
+
+# Filter years
+nuclear_region_filtered <- nuclear_region %>% 
+  filter(year >= 1990)
+
+# ggplot
+p <- nuclear_region_filtered %>%
+  ggplot(aes(x = region, y = nuclear_TWh, fill = region)) +
+  geom_boxplot(alpha = 0.8, outlier.alpha = 0.2) +
+  scale_fill_brewer(palette = "Set2") +
+  labs(
+    title = "Nuclear Electricity Generation by Region",
+    subtitle = "Distribution of annual nuclear electricity production (TWh), 1990–2024",
+    x = "Region",
+    y = "Nuclear Electricity Generation (TWh)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "gray40"),
+    legend.position = "none"
+  )
+
+# Convert to interactive plotly
+ggplotly(p)
+
+```
+Overall, the regional comparison shows that nuclear energy remains geographically concentrated, with North America, Europe, and parts of Asia producing the vast majority of global nuclear electricity. These differences reflect regional policy choices, technological capacity, historical investment, and the broader role nuclear energy plays in each region’s energy strategy.
+
+#### Did nuclear generation trends shift after major historical events such as the 1986 Chernobyl disaster or the 2011 Fukushima accident?
+
+In this chart, the two portions highlighted are two major nuclear accident, Chernobyl (1986) and Fukushima (2011) -as shown in graph 2 as well- This visualization shows the global response over the years that followed the events.
+
+Following Chernobyl, global output did not decline; instead, it continued rising through the late 1980s and 1990s, suggesting that most countries maintained or expanded their nuclear programs despite heightened concern.
+
+Fukushima, however, shows a more immediate global impact. After 2011, nuclear generation plateaus and then gradually declines as countries like Germany and Japan reduced or shut down reactors and global safety standards tightened. This pattern indicates that Fukushima produced a stronger and more sustained shift in worldwide nuclear policy than Chernobyl.
+
+```{r question4, echo=FALSE, message=FALSE, warning=FALSE}
+# Get max for placing labels nicely
+max_y <- max(global_nuclear$global_gen, na.rm = TRUE)
+
+global_nuclear %>%
+  ggplot(aes(x = year, y = global_gen)) +
+  geom_line(linewidth = 1.1, color = "#1b9e77") +
+  
+  # Shaded windows around major accidents
+  annotate("rect", xmin = 1986, xmax = 1990,
+           ymin = -Inf, ymax = Inf,
+           fill = "red", alpha = 0.06) +
+  annotate("rect", xmin = 2011, xmax = 2015,
+           ymin = -Inf, ymax = Inf,
+           fill = "steelblue", alpha = 0.06) +
+  
+  # Vertical dashed lines at event years
+  geom_vline(xintercept = 1986, linetype = "dashed", color = "red3") +
+  geom_vline(xintercept = 2011, linetype = "dashed", color = "steelblue4") +
+  
+  # Text labels for the events
+  annotate("text", x = 1986, y = max_y * 0.95,
+           label = "Chernobyl (1986)", angle = 90,
+           vjust = -0.3, size = 3) +
+  annotate("text", x = 2011, y = max_y * 0.95,
+           label = "Fukushima (2011)", angle = 90,
+           vjust = -0.3, size = 3) +
+  
+  labs(
+    title = "Global Nuclear Electricity Generation with Major Accidents Highlighted",
+    subtitle = "Total global nuclear generation (TWh) with Chernobyl (1986) and Fukushima (2011) marked",
+    x = "Year",
+    y = "Global Nuclear Electricity Generation (TWh)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "gray40")
+  )
+```
+
+Overall, the graph suggests that Chernobyl triggered long-term regulatory change but did not halt global nuclear growth, whereas Fukushima produced a noticeable pause and soft decline in worldwide nuclear output, reflecting a stronger global policy response and heightened public concern.
+
+#### What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
+
+```{r}
 
 ```
 
