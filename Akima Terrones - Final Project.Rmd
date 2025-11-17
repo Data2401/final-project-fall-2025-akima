@@ -53,23 +53,52 @@ colnames(nuclear)
   planned graph: Boxplot or grounded bar chart
 4) Did nuclear generation trends shift after major historical events such as the 1986 Chernobyl disaster or the 2011 Fukushima accident?
   planned graph: Before/after comparison timeline plot
-5)What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
-```{r...}
-##potential graph for 1st question
-nuclear %>%
-  filter(country %in% c("United States", "France", "China", "Russia")) %>%
-  ggplot(aes(x = year, y = nuclear_TWh, color = country)) +
-  geom_line(size = 1) +
-  labs(
-    title = "Nuclear Energy Generation Over Time",
-    x = "Year",
-    y = "Nuclear Energy Generation (TWh)",
-    color = "Country"
-  ) +
-  theme_minimal()
-```
+5) What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+## Data observations and Visualizations
+#### Which countries have had the highest nuclear energy production over time, and how have their outputs changed?
+
+The dataset identifies the highest total nuclear electricity producers as the United States, France, Japan, Russia, and Germany, with an additional aggregated series labeled “World”, which represents global nuclear production as a whole. 
+
+Among these, the United States has consistently led in nuclear electricity generation, maintaining a significant lead over other countries throughout the observed period, reflecting its early investment in nuclear technology and its large reactor fleet. France also shows sustained high output due to it's long-standing national strategy to generate most of its electricity from nuclear power. 
+
+Japan and Germany show noticeable declines after 2011. Japan’s sharp drop corresponds with the shutdown of many reactors following the Fukushima Daiichi accident, while Germany’s decline reflects its commitment to phasing out nuclear energy entirely. Russia displays a steadier long-term trend, maintaining moderate but consistent levels of nuclear production.
+
+```{r question1, echo=FALSE}
+library(tidyverse)
+# Filter
+nuclear_countries <- nuclear %>%
+  filter(!is.na(code))   # keep only rows with a 3-letter country code
+
+# Identify top nuclear-producing countries by total generation
+top_countries <- nuclear_countries %>%
+  group_by(country) %>%
+  summarize(total_gen = sum(nuclear_TWh, na.rm = TRUE)) %>%
+  slice_max(total_gen, n = 6) %>%   # top 6 producers
+  pull(country)
+top_countries
+
+# Multi-timeline trend
+nuclear_countries %>%
+  filter(country %in% top_countries) %>%
+  ggplot(aes(x = year, y = nuclear_TWh, color = country)) +
+  geom_line(linewidth = 1.2) +
+  geom_point(size = 1, alpha = 0.8) +
+  scale_color_brewer(palette = "Dark2") +
+  labs(
+    title = "Nuclear Electricity Production Over Time",
+    subtitle = "Top nuclear-producing countries (by total TWh generated)",
+    x = "Year",
+    y = "Nuclear Electricity Generation (TWh)",
+    color = "Country"
+  ) + theme_minimal(base_size = 13) + theme( plot.title = element_text(face = "bold"),
+      plot.subtitle = element_text(color = "gray40"),panel.grid.minor = element_blank()
+  )
+
+```
+Overall, these patterns highlight how national energy policies, safety events, and global responses to nuclear risks have shaped long-term nuclear energy production. Countries that view nuclear power as a strategic energy source maintain stable or increasing output, while others have reduced production in response to public safety concerns and policy shifts.
+
+#### How has global nuclear electricity generation changed over time?
 
 ```{r question2, echo=FALSE}
 ##graph for 2nd question
@@ -82,7 +111,7 @@ global_nuclear <- nuclear %>%
 # Plot
 global_nuclear %>%
   ggplot(aes(x = year, y = global_gen)) +
-  geom_line(size = 1.1, color = "blue") +
+  geom_line(linewidth = 1.1, color = "blue") +
   labs(
     title = "Global Nuclear Energy Generation Over Time",
     x = "Year",
