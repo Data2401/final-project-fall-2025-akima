@@ -1,5 +1,5 @@
 ---
-title: "Akima Terrones - Final Project"
+title: "Nuclear Energy in the Global Power Mix"
 author: "Akima M. Terrones"
 date: "2025-11-11"
 output: html_document
@@ -8,14 +8,13 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+## Introduction
 
-## R Markdown
+Nuclear energy is an important source of low-carbon electricity, playing a role in helping countries meet rising energy needs while reducing greenhouse-gas emissions. However, nuclear energy adoption has not been the worldwide 1st approach to energy. Some countries have expanded nuclear energy production, while others have reduced output or phased out facilities, especially after major events such as its use in weaponry and power plant accidents.
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+This project examines historical nuclear electricity production across countries to identify long-term trends, compare major producers, and understand how global patterns may reflect policy, safety, and environmental considerations. This analysis aims to provide insight into nuclear energy’s place in today’s energy landscape and its potential role in the future.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
-
-## About the Data
+## About the Dataset
 
 The dataset used in this project comes from **Our World in Data**, an open-access research platform that compiles global historical information about energy, climate, and development. The file includes country-level observations of nuclear electricity production over time.
 
@@ -44,22 +43,17 @@ nuclear <- read_csv("nuclear-energy-generation.csv") %>%    ##comes from website
 glimpse(nuclear)
 colnames(nuclear)
 ```
-## Introduction
 
-Nuclear energy is an important source of low-carbon electricity, playing a role in helping countries meet rising energy needs while reducing greenhouse-gas emissions. However, nuclear energy adoption has not been the worldwide 1st approach to energy. Some countries have expanded nuclear energy production, while others have reduced output or phased out facilities, especially after major events such as its use in weaponry and power plant accidents.
-
-This project examines historical nuclear electricity production across countries to identify long-term trends, compare major producers, and understand how global patterns may reflect policy, safety, and environmental considerations. This analysis aims to provide insight into nuclear energy’s place in today’s energy landscape and its potential role in the future.
-
-## Questions and Graphs 
+## Questions
 1) Which countries have had the highest nuclear energy production over time, and how have their outputs changed?
   planned graph: TBD
 2) How has global nuclear electricity generation changed over time?
   planned graph: Line chart of global nuclear_TWh over year
 3) How does nuclear energy usage differ by country or region?
   planned graph: Boxplot or grounded bar chart
-4) Did nuclear generation trends shift after major historical events (e.g., Chernobyl, Fukushima)?
+4) Did nuclear generation trends shift after major historical events such as the 1986 Chernobyl disaster or the 2011 Fukushima accident?
   planned graph: Before/after comparison timeline plot
-
+5)What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
 ```{r...}
 ##potential graph for 1st question
 nuclear %>%

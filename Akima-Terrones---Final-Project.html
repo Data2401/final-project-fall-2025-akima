@@ -13,7 +13,7 @@
 
 <meta name="date" content="2025-11-11" />
 
-<title>Akima Terrones - Final Project</title>
+<title>Nuclear Energy in the Global Power Mix</title>
 
 <script>// Pandoc 2.9 adds attributes on both header and div. We remove the former (to
 // be compatible with the behavior of Pandoc < 2.8).
@@ -350,25 +350,31 @@ display: none;
 
 
 
-<h1 class="title toc-ignore">Akima Terrones - Final Project</h1>
+<h1 class="title toc-ignore">Nuclear Energy in the Global Power Mix</h1>
 <h4 class="author">Akima M. Terrones</h4>
 <h4 class="date">2025-11-11</h4>
 
 </div>
 
 
-<div id="r-markdown" class="section level2">
-<h2>R Markdown</h2>
-<p>This is an R Markdown document. Markdown is a simple formatting
-syntax for authoring HTML, PDF, and MS Word documents. For more details
-on using R Markdown see <a href="http://rmarkdown.rstudio.com" class="uri">http://rmarkdown.rstudio.com</a>.</p>
-<p>When you click the <strong>Knit</strong> button a document will be
-generated that includes both content as well as the output of any
-embedded R code chunks within the document. You can embed an R code
-chunk like this:</p>
+<div id="introduction" class="section level2">
+<h2>Introduction</h2>
+<p>Nuclear energy is an important source of low-carbon electricity,
+playing a role in helping countries meet rising energy needs while
+reducing greenhouse-gas emissions. However, nuclear energy adoption has
+not been the worldwide 1st approach to energy. Some countries have
+expanded nuclear energy production, while others have reduced output or
+phased out facilities, especially after major events such as its use in
+weaponry and power plant accidents.</p>
+<p>This project examines historical nuclear electricity production
+across countries to identify long-term trends, compare major producers,
+and understand how global patterns may reflect policy, safety, and
+environmental considerations. This analysis aims to provide insight into
+nuclear energy’s place in today’s energy landscape and its potential
+role in the future.</p>
 </div>
-<div id="about-the-data" class="section level2">
-<h2>About the Data</h2>
+<div id="about-the-dataset" class="section level2">
+<h2>About the Dataset</h2>
 <p>The dataset used in this project comes from <strong>Our World in
 Data</strong>, an open-access research platform that compiles global
 historical information about energy, climate, and development. The file
@@ -388,24 +394,8 @@ countries and time. This dataset is useful for exploring how nuclear
 power has changed, which nations produce the most, and how external
 events or policy changes may have influenced energy production.</p>
 </div>
-<div id="introduction" class="section level2">
-<h2>Introduction</h2>
-<p>Nuclear energy is an important source of low-carbon electricity,
-playing a role in helping countries meet rising energy needs while
-reducing greenhouse-gas emissions. However, nuclear energy adoption has
-not been the worldwide 1st approach to energy. Some countries have
-expanded nuclear energy production, while others have reduced output or
-phased out facilities, especially after major events such as its use in
-weaponry and power plant accidents.</p>
-<p>This project examines historical nuclear electricity production
-across countries to identify long-term trends, compare major producers,
-and understand how global patterns may reflect policy, safety, and
-environmental considerations. This analysis aims to provide insight into
-nuclear energy’s place in today’s energy landscape and its potential
-role in the future.</p>
-</div>
-<div id="questions-and-graphs" class="section level2">
-<h2>Questions and Graphs</h2>
+<div id="questions" class="section level2">
+<h2>Questions</h2>
 <ol style="list-style-type: decimal">
 <li>Which countries have had the highest nuclear energy production over
 time, and how have their outputs changed? planned graph: TBD</li>
@@ -414,10 +404,12 @@ planned graph: Line chart of global nuclear_TWh over year</li>
 <li>How does nuclear energy usage differ by country or region? planned
 graph: Boxplot or grounded bar chart</li>
 <li>Did nuclear generation trends shift after major historical events
-(e.g., Chernobyl, Fukushima)? planned graph: Before/after comparison
-timeline plot</li>
+such as the 1986 Chernobyl disaster or the 2011 Fukushima accident?
+planned graph: Before/after comparison timeline plot 5)What do these
+trends suggest about nuclear energy’s role in supporting global
+decarbonization and energy security?
+<code>{r...} ##potential graph for 1st question nuclear %&gt;%   filter(country %in% c(&quot;United States&quot;, &quot;France&quot;, &quot;China&quot;, &quot;Russia&quot;)) %&gt;%   ggplot(aes(x = year, y = nuclear_TWh, color = country)) +   geom_line(size = 1) +   labs(     title = &quot;Nuclear Energy Generation Over Time&quot;,     x = &quot;Year&quot;,     y = &quot;Nuclear Energy Generation (TWh)&quot;,     color = &quot;Country&quot;   ) +   theme_minimal()</code></li>
 </ol>
-<p><code>{r...} ##potential graph for 1st question nuclear %&gt;%   filter(country %in% c(&quot;United States&quot;, &quot;France&quot;, &quot;China&quot;, &quot;Russia&quot;)) %&gt;%   ggplot(aes(x = year, y = nuclear_TWh, color = country)) +   geom_line(size = 1) +   labs(     title = &quot;Nuclear Energy Generation Over Time&quot;,     x = &quot;Year&quot;,     y = &quot;Nuclear Energy Generation (TWh)&quot;,     color = &quot;Country&quot;   ) +   theme_minimal()</code></p>
 <p>Note that the <code>echo = FALSE</code> parameter was added to the
 code chunk to prevent printing of the R code that generated the
 plot.</p>
