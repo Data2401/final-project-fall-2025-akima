@@ -233,7 +233,53 @@ Overall, the graph suggests that Chernobyl triggered long-term regulatory change
 
 #### What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
 
-```{r}
+In my graph, what is is highlighted is how nuclear energy's contribution to electricity generation is distributed across global regions in the modern era. North America and Europe clearly dominate nuclear output, producing substantially higher average annual generation compared to other regions. This reflects decades of established reactor capacity, consistent policy support, and investments in long-term energy security.
 
+Regions such as Asia display meaningful but more moderate levels of nuclear generation, suggesting ongoing expansion but not yet at the scale of the largest producers. Meanwhile, Latin America, the Middle East, Africa, and other regions show minimal nuclear output, indicating limited infrastructure, higher financial barriers, or stronger reliance on alternative energy sources.
+
+```{r question 5, echo=FALSE}
+library(dplyr)
+library(ggplot2)
+library(plotly)
+
+# Average nuclear generation by region in recent decades
+q5_summary <- nuclear_region %>%
+  filter(year >= 2000, nuclear_TWh > 0) %>%      #modern period
+  group_by(region) %>%
+  summarize(avg_TWh = mean(nuclear_TWh, na.rm = TRUE)) %>%
+  arrange(desc(avg_TWh))
+
+# Static bar plot
+p5 <- q5_summary %>%
+  ggplot(aes(x = reorder(region, avg_TWh),
+             y = avg_TWh,
+             fill = region)) +
+  geom_col() +
+  coord_flip() +
+  labs(
+    title = "Average Nuclear Electricity Generation by Region",
+    subtitle = "Mean annual nuclear generation (TWh), 2000–2024",
+    x = "Region",
+    y = "Average Nuclear Electricity Generation (TWh)"
+  ) +
+  theme_minimal(base_size = 13) +
+  theme(
+    plot.title    = element_text(face = "bold"),
+    plot.subtitle = element_text(color = "Black"),
+    legend.position = "none"
+  )
+
+ggplotly(p5)
 ```
 
+Together, these patterns suggest that nuclear energy plays a central role in decarbonization and energy security primarily in regions that have already built large, stable nuclear fleets. In these regions, nuclear power contributes reliable, low-carbon baseload electricity.
+
+Overall, the evidence suggests that while nuclear energy is not without risks, it remains a critical component of the global clean-energy mix, offering reliable baseload power that complements intermittent renewable sources such as solar and wind. Its long-term stability and low emissions position it as an important pillar for meeting climate goals while ensuring consistent and secure access to electricity.
+
+## Conclusion
+
+In conclusion, the data shows that nuclear energy has remained a steady and important source of low-carbon electricity around the world. The top-producing countries continue to generate large amounts of nuclear power, and global trends highlight long periods of growth with only temporary slowdowns after major events. Even when accidents like Fukushima created policy shifts, nuclear energy still remained a major part of the global energy mix.
+
+Regionally, North America, Europe, and parts of Asia carry most of the world’s nuclear production, while other regions contribute far less. This uneven distribution reflects differences in infrastructure, investment, and national priorities.
+
+Taken together, these trends suggest that nuclear energy plays a strong role in supporting decarbonization and energy security. It provides reliable, large-scale, low-carbon electricity that helps countries meet energy needs while reducing emissions. Even with challenges, nuclear power continues to be a key part of the global clean-energy landscape.
