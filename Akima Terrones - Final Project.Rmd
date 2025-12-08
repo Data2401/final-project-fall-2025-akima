@@ -28,14 +28,13 @@ Key variables include:
 
 The data spans multiple countries and years, allowing us to observe long-term nuclear energy trends globally. It allows comparisons across countries and time. This dataset is useful for exploring how nuclear power has changed, which nations produce the most, and how external events or policy changes may have influenced energy production.
 
-```{r Nuclear data, include=FALSE}
+```{r Nuclear data, message=FALSE, warning=FALSE}
 ##1 Nuclear Data
 library(tidyverse)
 library(lubridate)
 library(plotly)
 library(ggplot2)
 library(countrycode)
-library(janitor)
 library(ggthemes)
 
 nuclear <- read_csv("nuclear-energy-generation.csv") %>%    ##comes from website our world in data website for Nuclear Energy
@@ -90,7 +89,7 @@ The top 5 countries with the highest nuclear energy production in the most recen
 Identify which countries produce the most nuclear electricity in the most recent year, and visualize their output.
 
 #### Step 1: Load Libraries
-I used library(tifyverse) to load the full tidyverse collection (dplyr, ggplot2, etc.) used for data filtering, summarizing, and visualizing.
+I used library(tidyverse) to load the full tidyverse collection (dplyr, ggplot2, etc.) used for data filtering, summarizing, and visualizing.
 
 #### Step 2: Filter
 
@@ -346,7 +345,7 @@ plotly::ggplotly(p4)
 The Fukushima disaster triggered sharp declines in nuclear output for several major producers.
 Japan shows the most dramatic drop, falling from ~280 TWh in 2010 to near zero by 2012.
 Germany also declines noticeably as part of its nuclear phase-out policy.
-Meanwhile, countries like the SOuth Korea, Russia, and China show relatively stable or slightly increasing output during the same period.
+Meanwhile, countries like the South Korea, Russia, and China show relatively stable or slightly increasing output during the same period.
 This indicates that Fukushima caused major policy and production changes in a few key countries, but the global nuclear landscape did not uniformly decline.
 
 #### What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
