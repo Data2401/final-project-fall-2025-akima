@@ -8,6 +8,7 @@ output: html_document
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+
 ## Introduction
 
 Nuclear energy is an important source of low-carbon electricity, playing a role in helping countries meet rising energy needs while reducing greenhouse-gas emissions. However, nuclear energy adoption has not been the worldwide 1st approach to energy. Some countries have expanded nuclear energy production, while others have reduced output or phased out facilities, especially after major events such as its use in weaponry and power plant accidents.
@@ -20,10 +21,10 @@ The dataset used in this project comes from **Our World in Data**, an open-acces
 
 Key variables include:
 
-- **country** — Name of the country or region
-- **code** — Standard three-letter country code
-- **year** — Year of measurement
-- **nuclear_TWh** — Electricity produced from nuclear power (terawatt-hours)
+-   **country** — Name of the country or region
+-   **code** — Standard three-letter country code
+-   **year** — Year of measurement
+-   **nuclear_TWh** — Electricity produced from nuclear power (terawatt-hours)
 
 The data spans multiple countries and years, allowing us to observe long-term nuclear energy trends globally. It allows comparisons across countries and time. This dataset is useful for exploring how nuclear power has changed, which nations produce the most, and how external events or policy changes may have influenced energy production.
 
@@ -31,6 +32,11 @@ The data spans multiple countries and years, allowing us to observe long-term nu
 ##1 Nuclear Data
 library(tidyverse)
 library(lubridate)
+library(plotly)
+library(ggplot2)
+library(countrycode)
+library(janitor)
+library(ggthemes)
 
 nuclear <- read_csv("nuclear-energy-generation.csv") %>%    ##comes from website our world in data website for Nuclear Energy
   rename(
@@ -47,29 +53,66 @@ global_nuclear <- nuclear %>%
   filter(!is.na(nuclear_TWh)) %>%
   group_by(year) %>%
   summarize(global_gen = sum(nuclear_TWh, na.rm = TRUE))
+
+nuclear <- nuclear %>%
+  mutate(region = countrycode(code, "iso3c", "region"))
+valid_countries <- nuclear %>%
+  filter(!str_detect(country, "\\("),      # removes Ember, EI, OECD variants
+         !country %in% c("World", "Asia", "Europe", "North America",
+                          "South America", "Africa", 
+                          "High-income countries", "Upper-middle-income countries",
+                          "Lower-middle-income countries", "Low-income countries")) %>%
+  pull(country) %>%
+  unique()
+
+# Filter dataset
+nuclear_clean <- nuclear %>% 
+  filter(country %in% valid_countries)
+latest_year <- max(nuclear$year, na.rm = TRUE)
+
 ```
 
 ## Questions
-1) Which countries have had the highest nuclear energy production over time, and how have their outputs changed?
-  planned graph: TBD
-2) How has global nuclear electricity generation changed over time?
-  planned graph: Line chart of global nuclear_TWh over year
-3) How does nuclear energy usage differ by country or region?
-  planned graph: Boxplot or grounded bar chart
-4) Did nuclear generation trends shift after major historical events such as the 1986 Chernobyl disaster or the 2011 Fukushima accident?
-  planned graph: Before/after comparison timeline plot
-5) What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
+
+1)  Which countries have had the highest nuclear energy production over time, and how have their outputs changed? 
+2)  How has global nuclear electricity generation changed over time? 
+3)  How does nuclear energy usage differ by country or region? 
+4)  Did nuclear generation trends shift after major historical events such as the 2011 Fukushima accident? 
+5)  What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
 
 ## Data observations and Visualizations
+
 #### Which countries have had the highest nuclear energy production over time, and how have their outputs changed?
+The top 5 countries with the highest nuclear energy production in the most recent year are in the following order United States, France, China, Russia, and South Korea. These countries have consistently been among the leading producers of nuclear electricity worldwide.
 
-The dataset identifies the highest total nuclear electricity producers as the United States, France, Japan, Russia, and Germany, with an additional aggregated series labeled “World”, which represents global nuclear production as a whole. 
+##### Goal of this section
 
-Among these, the United States has consistently led in nuclear electricity generation, maintaining a significant lead over other countries throughout the observed period, reflecting its early investment in nuclear technology and its large reactor fleet. France also shows sustained high output due to it's long-standing national strategy to generate most of its electricity from nuclear power. 
+Identify which countries produce the most nuclear electricity in the most recent year, and visualize their output.
 
-Japan and Germany show noticeable declines after 2011. Japan’s sharp drop corresponds with the shutdown of many reactors following the Fukushima Daiichi accident, while Germany’s decline reflects its commitment to phasing out nuclear energy entirely. Russia displays a steadier long-term trend, maintaining moderate but consistent levels of nuclear production.
+#### Step 1: Load Libraries
+I used library(tifyverse) to load the full tidyverse collection (dplyr, ggplot2, etc.) used for data filtering, summarizing, and visualizing.
 
-```{r question1, echo=FALSE}
+#### Step 2: Filter
+
+Filtering the data set to include only rows with valid country codes
+nuclear_countries <- nuclear %>%
+  filter(!is.na(code))
+includes aggregated regions such as World, Europe, G7, OECD, etc. These have no 3-letter country code, so keeping only rows with code ≠ NA automatically removes these aggregates.
+
+#### Step 3: Identify Top Producers
+
+I labeled top_countries and set the the slice_max to 6, to only include the top 6 countires worldwide.
+Here I will breakdown each area and what it represents. 
+
+-   **group_by(country)** — We want to compute totals for each country individually.
+-   **filter(year == latest_year)** - Limits analysis to the most recent year in your dataset (e.g., 2024).
+-   **arrange(desc(nuclear_TWh))** - Orders countries from largest → smallest producer.
+- **summarize(total_gen = sum(...))** - Calculates each country’s total nuclear power production.
+- **slice_max(..., n = 6)** - Extracts the top 6 countries.
+- **pull(country)** - Stores those names in a vector (used in the next step).
+
+```{r question1, message=FALSE, warning=FALSE}
+
 library(tidyverse)
 # Filter
 nuclear_countries <- nuclear %>%
@@ -78,40 +121,55 @@ nuclear_countries <- nuclear %>%
 # Identify top nuclear-producing countries by total generation
 top_countries <- nuclear_countries %>%
   group_by(country) %>%
+    filter(year == latest_year) %>%
+  arrange(desc(nuclear_TWh)) %>%
   summarize(total_gen = sum(nuclear_TWh, na.rm = TRUE)) %>%
   slice_max(total_gen, n = 6) %>%   # top 6 producers
   pull(country)
 top_countries
-
-# Multi-timeline trend
-nuclear_countries %>%
-  filter(country %in% top_countries) %>%
-  ggplot(aes(x = year, y = nuclear_TWh, color = country)) +
-  geom_line(linewidth = 1.2) +
-  geom_point(size = 1, alpha = 0.8) +
-  scale_color_brewer(palette = "Dark2") +
+# Bar Chart
+top_latest <- nuclear_countries %>%
+  filter(country %in% top_countries, year == latest_year)
+ggplot(top_latest, aes(x = reorder(country, nuclear_TWh), y = nuclear_TWh)) +
+  geom_col(fill = "darkgreen") +
+  coord_flip() +
   labs(
-    title = "Nuclear Electricity Production Over Time",
-    subtitle = "Top nuclear-producing countries (by total TWh generated)",
-    x = "Year",
-    y = "Nuclear Electricity Generation (TWh)",
-    color = "Country"
-  ) + theme_minimal(base_size = 13) + theme( plot.title = element_text(face = "bold"),
-      plot.subtitle = element_text(color = "gray40"),panel.grid.minor = element_blank()
-  )
+    title = paste("Top Nuclear-Producing Countries in", latest_year),
+    x = "Country",
+    y = "Nuclear Electricity (TWh)"
+  ) +
+  theme_minimal()
 
 ```
-These country-level trends highlight how nuclear production differs widely based on national policies and historical events. However, to understand the broader impact of these changes, it’s important to look beyond individual countries and examine how global nuclear electricity generation has shifted over time.
+
+Based on the most recent year available, the top nuclear-producing countries were:
+
+- **United States (~800+ TWh)** — consistently the world’s largest producer.
+- **France (~400 TWh)** — deeply reliant on nuclear energy for its electricity mix.
+- **China (~330 TWh)** — rapid growth due to major nuclear expansion.
+- **Russia (~180 TWh)** — stable long-term output.
+- **South Korea (~160 TWh)** — consistent investment in nuclear capacity.
+
+These countries remain the global leaders due to sustained policy support, established reactor fleets, and long-term technological investment.
 
 #### How has global nuclear electricity generation changed over time?
 
 The global trend in nuclear electricity generation shows sustained growth from the 1970s through the early 2000s. Even after the 1986 Chernobyl disaster, worldwide nuclear output continued to increase. This reflects the fact that most countries did not immediately halt or reduce nuclear production, and many reactors built in earlier decades were still expanding or coming online in the years following the accident.
-```{r question2, echo=FALSE, message=FALSE, warning=FALSE}
+
+Global nuclear electricity generation shows a clear long-term trend:
+
+- Nuclear output rose rapidly from the 1970s to the mid-2000s, reaching nearly 2,700–3,000 TWh at its peak.
+- After Fukushima (2011), global generation plateaued and then gradually declined as countries like Germany and Japan shut down reactors.
+- In recent years, output has begun slowly rising again, driven by expanding capacity in China, Russia, and several emerging economies.
+
+```{r question2, message=FALSE, warning=FALSE}
+
 library(dygraphs)
 library(xts)
 
 global_xts <- xts(global_nuclear$global_gen,
                   order.by = as.Date(paste0(global_nuclear$year, "-01-01")))
+
 
 dygraph(global_xts, main = "Global Nuclear Energy Generation Over Time") %>%
 dySeries("V1", label = "TWh", color = "green") %>%
@@ -119,9 +177,10 @@ dySeries("V1", label = "TWh", color = "green") %>%
   dyOptions(fillGraph = TRUE, fillAlpha = 0.3, colors = "green")
 
 ```
+
 A noticeable shift emerges after the 2011 Fukushima accident. In the years immediately following Fukushima, global nuclear generation declines as countries such as Japan, Germany, and others shut down reactors or tightened regulatory standards. This suggests that while nuclear energy remained a significant part of the global energy mix, concerns about safety and public opposition following major accidents influenced the pace of new reactor construction and led some countries to reduce their reliance on nuclear power. However, this decline is not permanent.
 
-Shortly after 2012, nuclear energy generation increases, indicating that it was still being used as a major source of low-carbon electricity. This rebound may reflect ongoing investments in nuclear technology, the commissioning of new reactors within countries and the recognition of nuclear power’s role in meeting climate goals. 
+Shortly after 2012, nuclear energy generation increases, indicating that it was still being used as a major source of low-carbon electricity. This rebound may reflect ongoing investments in nuclear technology, the commissioning of new reactors within countries and the recognition of nuclear power’s role in meeting climate goals.
 
 Soon after some time, in 2023 we witness a steep ongoing decline that could be attributed to various reasons such a combination of aging reactor retirements, slower construction timelines for new facilities, and evolving national energy policies as the population increases and energy demands grow.
 
@@ -129,107 +188,166 @@ Overall, the data show that while major nuclear accidents can influence public p
 
 #### How does nuclear energy usage differ by country or region?
 
-The distribution of nuclear electricity generation varies sharply across global regions, revealing clear structural differences in how countries rely on nuclear power. North America stands out with the highest and most widely spread levels of nuclear production. This is largely driven by the United States, which operates the world’s largest fleet of nuclear reactors and consistently generates more nuclear electricity than any other nation.
+#### Our goal for this section
+To compare how nuclear energy usage differs among countries by visualizing production over time for the top nuclear-producing nations.
 
-Europe shows moderately high but less variable output, reflecting the long-term stability of nuclear programs in countries like France, Germany (before its phase-out), and Sweden. Europe’s narrower spread suggests that production levels have been more consistent over time, even as individual nations adjusted their energy policies.
+For this section, I decided to use a heat map to visualize nuclear electricity production across countries and years. Heat maps are effective for showing variations in data intensity, making it easy to see which countries produce more or less nuclear energy over time.
 
-Asia displays a wider and more uneven distribution, capturing the diverse nuclear trajectories of countries such as Japan, South Korea, China, and India. China’s rapid nuclear expansion contrasts with Japan’s post-Fukushima decline, creating a broad range of production values within the region.
+#### Step 1: clean the data
+I removed grouped categories such as Ember, EI, OECD variants, and regional aggregates to focus on individual countries.
 
-In contrast, Latin America and the Other category maintain very low levels of nuclear output. While these regions include countries with emerging or limited nuclear infrastructure, their consistently small distributions highlight the concentration of nuclear technology in a few major regions.
+#### Step 2: Identify nuclear-producing countries
+We calculate each country’s total nuclear output and select the top 10 by using slice head(n = 10). This ensures we focus on the most relevant producers for clarity.
 
-```{r question 3, echo=FALSE, message=FALSE, warning=FALSE}
+#### Step 3: Preparing heatmap dataset
+heat_df <- nuclear_clean %>%
+  filter(country %in% top_countries, year >= 2000) %>%
+  group_by(country, year) %>%
+  summarize(total_TWh = sum(nuclear_TWh, na.rm = TRUE)) %>%
+  ungroup()
+by using this we keep only the top countires, years 2000+ for nuclear relevancy, and summarize total TWh per country-year.
+
+#### Step 4: Plotting the heatmap
+The log scaled used helped distinguish countries with both low and high production. Tiles show how output changes by country and year.
+
+```{r question 3, message=FALSE, warning=FALSE}
+
 library(tidyverse)
-library(plotly)
+library(ggplot2)
+library(viridis)
 
-# Create simple regions using case_when
-nuclear_region <- nuclear %>%
-  filter(!is.na(code)) %>%
-  mutate(region = case_when(
-    country %in% c("United States", "Canada") ~ "North America",
-    country %in% c("France", "Germany", "United Kingdom", "Sweden", "Spain", "Belgium") ~ "Europe",
-    country %in% c("Japan", "South Korea", "China", "India") ~ "Asia",
-    country %in% c("Brazil", "Argentina", "Mexico") ~ "Latin America",
-    TRUE ~ "Other"
-  ))
+# Remove group names: Ember/EI/OECD variants, regions, income groups, etc.
+nuclear_clean <- nuclear %>%
+  filter(
+    # Remove entries with parenthesis (Ember), (EI), (OECD)
+    !str_detect(country, "\\("),
 
-# Filter years
-nuclear_region_filtered <- nuclear_region %>% 
-  filter(year >= 1990)
-
-# ggplot
-p <- nuclear_region_filtered %>%
-  ggplot(aes(x = region, y = nuclear_TWh, fill = region)) +
-  geom_boxplot(alpha = 0.8, outlier.alpha = 0.2) +
-  scale_fill_brewer(palette = "Set2") +
-  labs(
-    title = "Nuclear Electricity Generation by Region",
-    subtitle = "Distribution of annual nuclear electricity production (TWh), 1990–2024",
-    x = "Region",
-    y = "Nuclear Electricity Generation (TWh)"
-  ) +
-  theme_minimal(base_size = 13) +
-  theme(
-    plot.title = element_text(face = "bold"),
-    plot.subtitle = element_text(color = "gray40"),
-    legend.position = "none"
+    # Remove global or regional aggregates
+    !country %in% c(
+      "World", "Africa", "Asia", "Europe", "European Union (27)",
+      "North America", "South America", "Latin America and Caribbean",
+      "Oceania", "Central America", "Middle East", "CIS",
+      "High-income countries", "Upper-middle-income countries",
+      "Lower-middle-income countries", "Low-income countries"
+    )
   )
 
-# Convert to interactive plotly
-ggplotly(p)
+# Identify only nuclear-producing countries (non-zero output)
+producers <- nuclear_clean %>%
+  group_by(country) %>%
+  summarize(total = sum(nuclear_TWh, na.rm = TRUE)) %>%
+  filter(total > 0) %>%
+  arrange(desc(total))
 
-```
-Overall, the regional comparison shows that nuclear energy remains geographically concentrated, with North America, Europe, and parts of Asia producing the vast majority of global nuclear electricity. These differences reflect regional policy choices, technological capacity, historical investment, and the broader role nuclear energy plays in each region’s energy strategy.
+# Choose top countries for clarity
+top_countries <- producers %>% slice_head(n = 10) %>% pull(country)
 
-#### Did nuclear generation trends shift after major historical events such as the 1986 Chernobyl disaster or the 2011 Fukushima accident?
+# heatmap dataset
+heat_df <- nuclear_clean %>%
+  filter(country %in% top_countries, year >= 2000) %>%
+  group_by(country, year) %>%
+  summarize(total_TWh = sum(nuclear_TWh, na.rm = TRUE)) %>%
+  ungroup()
 
-In this chart, the two portions highlighted are two major nuclear accident, Chernobyl (1986) and Fukushima (2011) -as shown in graph 2 as well- This visualization shows the global response over the years that followed the events.
+# Order countries by total output (clean & readable)
+heat_df <- heat_df %>%
+  mutate(country = factor(country, levels = rev(top_countries)))
 
-Following Chernobyl, global output did not decline; instead, it continued rising through the late 1980s and 1990s, suggesting that most countries maintained or expanded their nuclear programs despite heightened concern.
-
-Fukushima, however, shows a more immediate global impact. After 2011, nuclear generation plateaus and then gradually declines as countries like Germany and Japan reduced or shut down reactors and global safety standards tightened. This pattern indicates that Fukushima produced a stronger and more sustained shift in worldwide nuclear policy than Chernobyl.
-
-```{r question4, echo=FALSE, message=FALSE, warning=FALSE}
-# Get max for placing labels nicely
-max_y <- max(global_nuclear$global_gen, na.rm = TRUE)
-
-global_nuclear %>%
-  ggplot(aes(x = year, y = global_gen)) +
-  geom_line(linewidth = 1.1, color = "#1b9e77") +
-  
-  # Shaded windows around major accidents
-  annotate("rect", xmin = 1986, xmax = 1990,
-           ymin = -Inf, ymax = Inf,
-           fill = "red", alpha = 0.06) +
-  annotate("rect", xmin = 2011, xmax = 2015,
-           ymin = -Inf, ymax = Inf,
-           fill = "steelblue", alpha = 0.06) +
-  
-  # Vertical dashed lines at event years
-  geom_vline(xintercept = 1986, linetype = "dashed", color = "red3") +
-  geom_vline(xintercept = 2011, linetype = "dashed", color = "steelblue4") +
-  
-  # Text labels for the events
-  annotate("text", x = 1986, y = max_y * 0.95,
-           label = "Chernobyl (1986)", angle = 90,
-           vjust = -0.3, size = 3) +
-  annotate("text", x = 2011, y = max_y * 0.95,
-           label = "Fukushima (2011)", angle = 90,
-           vjust = -0.3, size = 3) +
-  
+# Plot heatmap
+ggplot(heat_df, aes(x = year, y = country, fill = total_TWh)) +
+  geom_tile(color = "white", linewidth = 0.3) +
+  scale_fill_viridis(
+    option = "plasma",
+    trans = "log10",
+    breaks = c(1, 10, 100, 1000),
+    labels = c("1", "10", "100", "1000"),
+    name = "TWh\n(log scale)"
+  ) +
   labs(
-    title = "Global Nuclear Electricity Generation with Major Accidents Highlighted",
-    subtitle = "Total global nuclear generation (TWh) with Chernobyl (1986) and Fukushima (2011) marked",
+    title = "Nuclear Electricity Production Heatmap by Country",
     x = "Year",
-    y = "Global Nuclear Electricity Generation (TWh)"
+    y = "Country"
   ) +
-  theme_minimal(base_size = 13) +
+  theme_minimal(base_size = 12) +
   theme(
-    plot.title = element_text(face = "bold"),
-    plot.subtitle = element_text(color = "gray40")
+    axis.text.y = element_text(size = 8),
+    axis.text.x = element_text(angle = 45, hjust = 1),
+    plot.title = element_text(size = 15, face = "bold"),
+    panel.grid = element_blank()
   )
 ```
 
-Overall, the graph suggests that Chernobyl triggered long-term regulatory change but did not halt global nuclear growth, whereas Fukushima produced a noticeable pause and soft decline in worldwide nuclear output, reflecting a stronger global policy response and heightened public concern.
+The heatmap shows major differences in nuclear production among the top countries.
+
+- The United States and France remain the highest producers throughout the 2000s.
+- China experiences rapid growth, rising from minimal output in 2000 to one of the top producers today.
+- Japan collapses after 2011, and Germany declines due to nuclear phase-out policies. (shown as grey in the THh scale)
+- Overall, nuclear use is dominated by a small group of countries with clear upward or downward trends.
+
+#### Did nuclear generation trends shift after major historical events such as the 2011 Fukushima accident?
+
+#### Our goal for this section
+To compare nuclear output before vs after the 2011 Fukushima accident for the world’s top nuclear-producing countries.
+
+For this code, I filtered out the yeards around the Fukushima event (2010 and 2012) to see how nuclear output changed immediately before and after the accident. I focused on the top 10 nuclear-producing countries to highlight the most relevant changes and only keeping 2010 (before Fukushima) and 2012 (after Fukushima). I reshaped the data so each row contains a country’s before and after values.
+
+What this graph shows:
+
+- Red dot = output in 2010
+- Blue dot = output in 2012
+- Gray line connects before ↔ after
+- Country order is based on pre-Fukushima output
+- The gap shows magnitude of change
+This creates a clear, intuitive visualization of how nuclear production shifted immediately after Fukushima.
+
+```{r question4, message=FALSE, warning=FALSE, fig.width=11, fig.height=6}
+# filtering out aggregated regions
+nuclear_clean <- nuclear %>%
+  filter(
+    !str_detect(country, "\\("),  # removes (Ember), (EI), (OECD)
+    !country %in% c(
+      "World", "High-income countries", "Upper-middle-income countries",
+      "Lower-middle-income countries", "Low-income countries",
+      "Europe", "Asia", "North America", "South America",
+      "Latin America and Caribbean", "Oceania",
+      "G20", "EU", "European Union (27)"
+    )
+  )
+# filtering for top 10 countries before and after Fukushima (2010 to 2012)
+before_after <- nuclear_clean %>%
+  filter(year %in% c(2010, 2012)) %>%
+  pivot_wider(names_from = year,
+              values_from = nuclear_TWh,
+              names_prefix = "yr_") %>%
+  drop_na(yr_2010, yr_2012) %>%
+  arrange(desc(yr_2010)) %>%
+  slice_head(n = 10)   # top 10 real countries
+# plotting
+p4 <- ggplot(before_after) +
+  geom_segment(aes(x = yr_2010, xend = yr_2012,
+                   y = reorder(country, yr_2010),
+                   yend = reorder(country, yr_2010)),
+               color = "black") +
+  geom_point(aes(x = yr_2010, y = country),
+             color = "red", size = 3) +
+  geom_point(aes(x = yr_2012, y = country),
+             color = "blue", size = 3) +
+  labs(
+    title = "Change in Nuclear Output Before vs After Fukushima (2010 → 2012)",
+    subtitle = "Red = Before (2010), Blue = After (2012)",
+    x = "Nuclear Electricity (TWh)",
+    y = "Country"
+  ) +
+  theme_minimal()
+
+plotly::ggplotly(p4)
+
+```
+The Fukushima disaster triggered sharp declines in nuclear output for several major producers.
+Japan shows the most dramatic drop, falling from ~280 TWh in 2010 to near zero by 2012.
+Germany also declines noticeably as part of its nuclear phase-out policy.
+Meanwhile, countries like the SOuth Korea, Russia, and China show relatively stable or slightly increasing output during the same period.
+This indicates that Fukushima caused major policy and production changes in a few key countries, but the global nuclear landscape did not uniformly decline.
 
 #### What do these trends suggest about nuclear energy’s role in supporting global decarbonization and energy security?
 
@@ -237,10 +355,17 @@ In my graph, what is is highlighted is how nuclear energy's contribution to elec
 
 Regions such as Asia display meaningful but more moderate levels of nuclear generation, suggesting ongoing expansion but not yet at the scale of the largest producers. Meanwhile, Latin America, the Middle East, Africa, and other regions show minimal nuclear output, indicating limited infrastructure, higher financial barriers, or stronger reliance on alternative energy sources.
 
-```{r question 5, echo=FALSE}
+```{r question 5, message=FALSE, warning=FALSE}
+
 library(dplyr)
 library(ggplot2)
 library(plotly)
+library(countrycode)
+
+nuclear <- nuclear %>%
+  mutate(region = countrycode(code, "iso3c", "region"))
+nuclear_region <- nuclear %>%
+  filter(!is.na(region))
 
 # Average nuclear generation by region in recent decades
 q5_summary <- nuclear_region %>%
